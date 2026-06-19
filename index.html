@@ -403,7 +403,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-  const transactions = [
+  const DEFAULT_TRANSACTIONS = [
     { desc: 'Gaji bulanan',       amount: 4500000, type: 'masuk',  date: '1 Jun 2026' },
     { desc: 'Freelance desain',   amount: 1000000, type: 'masuk',  date: '5 Jun 2026' },
     { desc: 'Sewa kos',           amount: 1200000, type: 'keluar', date: '3 Jun 2026' },
@@ -413,6 +413,27 @@
     { desc: 'Bonus proyek',       amount: 500000,  type: 'masuk',  date: '15 Jun 2026' },
     { desc: 'Tagihan listrik',    amount: 250000,  type: 'keluar', date: '17 Jun 2026' },
   ];
+
+  const STORAGE_KEY = 'tabungan_pribadi_v1';
+
+  function loadTransactions() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : DEFAULT_TRANSACTIONS;
+    } catch (e) {
+      return DEFAULT_TRANSACTIONS;
+    }
+  }
+
+  function saveTransactions() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    } catch (e) {
+      console.warn('Gagal menyimpan data:', e);
+    }
+  }
+
+  const transactions = loadTransactions();
 
   function fmt(n) {
     if (n >= 1000000) return 'Rp ' + (n / 1000000).toFixed(1).replace('.', ',') + ' jt';
@@ -428,8 +449,8 @@
   function updateMetrics() {
     const totalMasuk  = transactions.filter(t => t.type === 'masuk').reduce((s, t) => s + t.amount, 0);
     const totalKeluar = transactions.filter(t => t.type === 'keluar').reduce((s, t) => s + t.amount, 0);
-    const saldo       = totalMasuk - totalKeluar;
-    const bersih      = totalMasuk - totalKeluar;
+    const saldo  = totalMasuk - totalKeluar;
+    const bersih = totalMasuk - totalKeluar;
 
     document.getElementById('stat-masuk').textContent  = fmt(totalMasuk);
     document.getElementById('stat-keluar').textContent = fmt(totalKeluar);
@@ -448,7 +469,11 @@
 
   function renderList() {
     const ul = document.getElementById('tx-list');
-    ul.innerHTML = transactions.slice(0, 8).map(t => `
+    if (transactions.length === 0) {
+      ul.innerHTML = '<li style="padding:1rem 0; text-align:center; color:var(--text-secondary); font-size:13px;">Belum ada transaksi. Tambahkan transaksi pertama kamu!</li>';
+      return;
+    }
+    ul.innerHTML = transactions.slice(0, 8).map((t, i) => `
       <li class="tx-item">
         <div class="tx-icon ${t.type}" aria-hidden="true">
           <i class="ti ti-${t.type === 'masuk' ? 'arrow-down' : 'arrow-up'}"></i>
@@ -458,8 +483,18 @@
           <div class="tx-date">${t.date}</div>
         </div>
         <div class="tx-amount ${t.type}">${t.type === 'masuk' ? '+' : '−'}${fmt(t.amount)}</div>
+        <button onclick="deleteTx(${i})" title="Hapus transaksi" style="width:28px; height:28px; padding:0; border-color:transparent; color:var(--text-secondary); flex-shrink:0;" aria-label="Hapus ${t.desc}">
+          <i class="ti ti-trash" style="font-size:14px;" aria-hidden="true"></i>
+        </button>
       </li>
     `).join('');
+  }
+
+  function deleteTx(index) {
+    transactions.splice(index, 1);
+    saveTransactions();
+    renderList();
+    updateMetrics();
   }
 
   function addTx(type) {
@@ -472,7 +507,10 @@
       return;
     }
     const now = new Date();
-    transactions.unshift({ desc, amount, type, date: `${now.getDate()} Jun 2026` });
+    const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const dateStr = `${now.getDate()} ${bulan[now.getMonth()]} ${now.getFullYear()}`;
+    transactions.unshift({ desc, amount, type, date: dateStr });
+    saveTransactions();
     descEl.value   = '';
     amountEl.value = '';
     renderList();
