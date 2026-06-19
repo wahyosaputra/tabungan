@@ -332,28 +332,11 @@
     <div class="card">
       <div class="card-header">
         <span class="card-title"><i class="ti ti-target" aria-hidden="true" style="margin-right:6px;"></i>Target Tabungan</span>
+        <button onclick="openTargetModal()" style="font-size:12px; height:28px;"><i class="ti ti-settings" aria-hidden="true" style="font-size:13px; margin-right:4px;"></i>Kelola</button>
       </div>
 
-      <div class="progress-label">
-        <span>Dana Darurat <span class="badge badge-green">Prioritas</span></span>
-        <span style="font-weight:500; color:var(--text-primary);">68%</span>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" style="width:68%; background:var(--green-fill);"></div></div>
-      <div class="progress-caption">Rp 6,8 jt / Rp 10 jt</div>
-
-      <div class="progress-label">
-        <span>Naik Bukit <span class="badge badge-blue">Impian</span></span>
-        <span style="font-weight:500; color:var(--text-primary);">42%</span>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" style="width:42%; background:#185FA5;"></div></div>
-      <div class="progress-caption">Rp 2,1 jt / Rp 5 jt</div>
-
-      <div class="progress-label">
-        <span>Upgrade Ram Laptop <span class="badge badge-amber">Rencana</span></span>
-        <span style="font-weight:500; color:var(--text-primary);">21%</span>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" style="width:21%; background:var(--amber-text);"></div></div>
-      <div class="progress-caption" style="margin-bottom:0;">Rp 1,5 jt / Rp 7 jt</div>
+      <div id="target-list"></div>
+      <p id="target-empty" style="display:none; font-size:13px; color:var(--text-secondary); text-align:center; padding:0.5rem 0;">Belum ada target. Klik "Kelola" untuk menambahkan.</p>
     </div>
 
     <div class="card">
@@ -401,6 +384,34 @@
 
 </div>
 
+<!-- Modal Kelola Target -->
+<div id="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:100; align-items:center; justify-content:center; padding:1rem;">
+  <div style="background:var(--bg-primary); border-radius:var(--radius-lg); border:0.5px solid var(--border); width:100%; max-width:440px; max-height:90vh; overflow-y:auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:1.25rem 1.25rem 0;">
+      <span style="font-size:15px; font-weight:500; color:var(--text-primary);">Kelola Target Tabungan</span>
+      <button onclick="closeTargetModal()" style="width:28px; height:28px; padding:0; border-color:transparent; color:var(--text-secondary);" aria-label="Tutup"><i class="ti ti-x" style="font-size:16px;" aria-hidden="true"></i></button>
+    </div>
+    <div style="padding:1rem 1.25rem; border-bottom:0.5px solid var(--border);">
+      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:0.75rem;">Saldo total dibagi rata ke semua target secara otomatis.</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:end;">
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; color:var(--text-secondary);">Nama target</label>
+          <input type="text" id="new-target-name" placeholder="cth. Dana Darurat" />
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; color:var(--text-secondary);">Jumlah target (Rp)</label>
+          <input type="number" id="new-target-amount" placeholder="10000000" min="1" />
+        </div>
+        <button onclick="addTarget()" style="height:36px; background:var(--blue-bg); color:var(--blue-text); border-color:#B5D4F4; white-space:nowrap;">+ Tambah</button>
+      </div>
+    </div>
+    <ul id="modal-target-list" style="list-style:none; padding:0 1.25rem;"></ul>
+    <div style="padding:1rem 1.25rem;">
+      <button onclick="closeTargetModal()" style="width:100%; height:36px; font-size:13px;">Selesai</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
   const DEFAULT_TRANSACTIONS = [
@@ -414,58 +425,195 @@
     { desc: 'Tagihan listrik',    amount: 250000,  type: 'keluar', date: '17 Jun 2026' },
   ];
 
-  const STORAGE_KEY = 'tabungan_pribadi_v1';
+  const DEFAULT_TARGETS = [
+    { name: 'Dana Darurat', goal: 5000000  },
+    { name: 'Liburan', goal: 1000000  },
+    { name: 'Upgrade Ram',  goal: 1200000  },
+  ];
+
+  const TX_KEY     = 'tabungan_pribadi_v1';
+  const TARGET_KEY = 'tabungan_target_v1';
 
   function loadTransactions() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_TRANSACTIONS;
-    } catch (e) {
-      return DEFAULT_TRANSACTIONS;
-    }
+    try { const s = localStorage.getItem(TX_KEY); return s ? JSON.parse(s) : DEFAULT_TRANSACTIONS; }
+    catch(e) { return DEFAULT_TRANSACTIONS; }
   }
-
   function saveTransactions() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-    } catch (e) {
-      console.warn('Gagal menyimpan data:', e);
-    }
+    try { localStorage.setItem(TX_KEY, JSON.stringify(transactions)); } catch(e) {}
+  }
+  function loadTargets() {
+    try { const s = localStorage.getItem(TARGET_KEY); return s ? JSON.parse(s) : DEFAULT_TARGETS; }
+    catch(e) { return DEFAULT_TARGETS; }
+  }
+  function saveTargets() {
+    try { localStorage.setItem(TARGET_KEY, JSON.stringify(targets)); } catch(e) {}
   }
 
   const transactions = loadTransactions();
+  const targets      = loadTargets();
 
   function fmt(n) {
     if (n >= 1000000) return 'Rp ' + (n / 1000000).toFixed(1).replace('.', ',') + ' jt';
     if (n >= 1000)    return 'Rp ' + Math.round(n / 1000) + ' rb';
     return 'Rp ' + n.toLocaleString('id-ID');
   }
-
   function fmtShort(n) {
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'jt';
     return Math.round(n / 1000) + 'rb';
   }
 
+  function getSaldo() {
+    const masuk  = transactions.filter(t => t.type === 'masuk').reduce((s,t) => s + t.amount, 0);
+    const keluar = transactions.filter(t => t.type === 'keluar').reduce((s,t) => s + t.amount, 0);
+    return { masuk, keluar, saldo: masuk - keluar };
+  }
+
   function updateMetrics() {
-    const totalMasuk  = transactions.filter(t => t.type === 'masuk').reduce((s, t) => s + t.amount, 0);
-    const totalKeluar = transactions.filter(t => t.type === 'keluar').reduce((s, t) => s + t.amount, 0);
-    const saldo  = totalMasuk - totalKeluar;
-    const bersih = totalMasuk - totalKeluar;
-
-    document.getElementById('stat-masuk').textContent  = fmt(totalMasuk);
-    document.getElementById('stat-keluar').textContent = fmt(totalKeluar);
+    const { masuk, keluar, saldo } = getSaldo();
+    document.getElementById('stat-masuk').textContent  = fmt(masuk);
+    document.getElementById('stat-keluar').textContent = fmt(keluar);
     document.getElementById('stat-saldo').textContent  = fmt(saldo);
-    document.getElementById('stat-bersih').textContent = fmt(bersih);
-
+    document.getElementById('stat-bersih').textContent = fmt(saldo);
     const subEl = document.getElementById('stat-saldo-sub');
-    if (bersih >= 0) {
+    if (saldo >= 0) {
       subEl.style.color = 'var(--green-text)';
       subEl.textContent = '↑ Tabungan positif';
     } else {
       subEl.style.color = 'var(--red-text)';
       subEl.textContent = '↓ Pengeluaran melebihi pemasukan';
     }
+    renderTargets();
   }
+
+  const TARGET_COLORS = ['#639922','#185FA5','#854F0B','#0F6E56','#533AB7','#993556'];
+
+  function renderTargets() {
+    const { saldo } = getSaldo();
+    const container = document.getElementById('target-list');
+    const empty     = document.getElementById('target-empty');
+
+    if (targets.length === 0) {
+      container.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    const perTarget = targets.length > 0 ? Math.max(0, saldo) / targets.length : 0;
+
+    container.innerHTML = targets.map((t, i) => {
+      const allocated = Math.min(perTarget, t.goal);
+      const pct       = Math.min(100, Math.round((allocated / t.goal) * 100));
+      const color     = TARGET_COLORS[i % TARGET_COLORS.length];
+      const isLast    = i === targets.length - 1;
+      return `
+        <div style="margin-bottom:${isLast ? '0' : '14px'};">
+          <div class="progress-label">
+            <span style="color:var(--text-primary); font-size:13px;">${t.name}</span>
+            <span style="font-weight:500; color:var(--text-primary);">${pct}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%; background:${color}; transition:width 0.4s ease;"></div>
+          </div>
+          <div style="font-size:11px; color:var(--text-secondary);">${fmt(allocated)} / ${fmt(t.goal)}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderModalList() {
+    const ul = document.getElementById('modal-target-list');
+    if (targets.length === 0) {
+      ul.innerHTML = '<li style="padding:0.75rem 0; font-size:13px; color:var(--text-secondary); text-align:center;">Belum ada target.</li>';
+      return;
+    }
+    ul.innerHTML = targets.map((t, i) => `
+      <li style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:0.5px solid var(--border);">
+        <div style="flex:1;">
+          <div id="view-name-${i}" style="font-size:13px; font-weight:500; color:var(--text-primary);">${t.name}</div>
+          <div id="view-goal-${i}" style="font-size:12px; color:var(--text-secondary);">Target: ${fmt(t.goal)}</div>
+          <div id="edit-form-${i}" style="display:none; margin-top:6px; display:none;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:4px;">
+              <input type="text" id="edit-name-${i}" value="${t.name}" placeholder="Nama target" />
+              <input type="number" id="edit-goal-${i}" value="${t.goal}" placeholder="Jumlah" min="1" />
+            </div>
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <button onclick="saveTarget(${i})" style="flex:1; height:30px; font-size:12px; background:var(--green-bg); color:var(--green-text); border-color:#C0DD97;">Simpan</button>
+              <button onclick="cancelEdit(${i})" style="height:30px; font-size:12px; padding:0 10px;">Batal</button>
+            </div>
+          </div>
+        </div>
+        <div id="action-btns-${i}" style="display:flex; gap:4px;">
+          <button onclick="startEdit(${i})" title="Edit" style="width:28px; height:28px; padding:0; border-color:transparent; color:var(--text-secondary);" aria-label="Edit ${t.name}">
+            <i class="ti ti-edit" style="font-size:14px;" aria-hidden="true"></i>
+          </button>
+          <button onclick="deleteTarget(${i})" title="Hapus" style="width:28px; height:28px; padding:0; border-color:transparent; color:var(--text-secondary);" aria-label="Hapus ${t.name}">
+            <i class="ti ti-trash" style="font-size:14px;" aria-hidden="true"></i>
+          </button>
+        </div>
+      </li>
+    `).join('');
+  }
+
+  function startEdit(i) {
+    document.getElementById('view-name-' + i).style.display = 'none';
+    document.getElementById('view-goal-' + i).style.display = 'none';
+    document.getElementById('action-btns-' + i).style.display = 'none';
+    const form = document.getElementById('edit-form-' + i);
+    form.style.display = 'block';
+  }
+
+  function cancelEdit(i) {
+    document.getElementById('view-name-' + i).style.display = 'block';
+    document.getElementById('view-goal-' + i).style.display = 'block';
+    document.getElementById('action-btns-' + i).style.display = 'flex';
+    document.getElementById('edit-form-' + i).style.display = 'none';
+  }
+
+  function saveTarget(i) {
+    const name = document.getElementById('edit-name-' + i).value.trim();
+    const goal = parseInt(document.getElementById('edit-goal-' + i).value);
+    if (!name || !goal || goal <= 0) { alert('Nama dan jumlah target harus diisi.'); return; }
+    targets[i].name = name;
+    targets[i].goal = goal;
+    saveTargets();
+    renderModalList();
+    renderTargets();
+  }
+
+  function deleteTarget(i) {
+    if (!confirm('Hapus target "' + targets[i].name + '"?')) return;
+    targets.splice(i, 1);
+    saveTargets();
+    renderModalList();
+    renderTargets();
+  }
+
+  function addTarget() {
+    const name   = document.getElementById('new-target-name').value.trim();
+    const amount = parseInt(document.getElementById('new-target-amount').value);
+    if (!name || !amount || amount <= 0) { alert('Isi nama dan jumlah target.'); return; }
+    targets.push({ name, goal: amount });
+    saveTargets();
+    document.getElementById('new-target-name').value   = '';
+    document.getElementById('new-target-amount').value = '';
+    renderModalList();
+    renderTargets();
+  }
+
+  function openTargetModal() {
+    renderModalList();
+    const overlay = document.getElementById('modal-overlay');
+    overlay.style.display = 'flex';
+  }
+
+  function closeTargetModal() {
+    document.getElementById('modal-overlay').style.display = 'none';
+  }
+
+  document.getElementById('modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeTargetModal();
+  });
 
   function renderList() {
     const ul = document.getElementById('tx-list');
@@ -502,12 +650,9 @@
     const amountEl = document.getElementById('tx-amount');
     const desc     = descEl.value.trim();
     const amount   = parseInt(amountEl.value);
-    if (!desc || !amount || amount <= 0) {
-      alert('Isi keterangan dan jumlah dengan benar.');
-      return;
-    }
-    const now = new Date();
-    const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    if (!desc || !amount || amount <= 0) { alert('Isi keterangan dan jumlah dengan benar.'); return; }
+    const now    = new Date();
+    const bulan  = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     const dateStr = `${now.getDate()} ${bulan[now.getMonth()]} ${now.getFullYear()}`;
     transactions.unshift({ desc, amount, type, date: dateStr });
     saveTransactions();
@@ -517,12 +662,8 @@
     updateMetrics();
   }
 
-  const monthNames = [
-    'Januari 2026','Februari 2026','Maret 2026',
-    'April 2026','Mei 2026','Juni 2026'
-  ];
+  const monthNames = ['Januari 2026','Februari 2026','Maret 2026','April 2026','Mei 2026','Juni 2026'];
   let currentMonthIdx = 5;
-
   function changeMonth(dir) {
     currentMonthIdx = Math.max(0, Math.min(monthNames.length - 1, currentMonthIdx + dir));
     document.getElementById('month-label').textContent = monthNames[currentMonthIdx];
