@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tabungan Pribadi</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f5f3;
+      --bg-page: #f0ede8;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b6b66;
+      --border: rgba(0,0,0,0.12);
+      --border-hover: rgba(0,0,0,0.25);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --green-bg: #EAF3DE;
+      --green-text: #3B6D11;
+      --green-fill: #639922;
+      --red-bg: #FCEBEB;
+      --red-text: #A32D2D;
+      --red-fill: #E24B4A;
+      --blue-bg: #E6F1FB;
+      --blue-text: #185FA5;
+      --amber-bg: #FAEEDA;
+      --amber-text: #854F0B;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1e1e1c;
+        --bg-secondary: #2a2a28;
+        --bg-page: #141412;
+        --text-primary: #f0ede8;
+        --text-secondary: #9a9a94;
+        --border: rgba(255,255,255,0.12);
+        --border-hover: rgba(255,255,255,0.28);
+        --green-bg: #173404;
+        --green-text: #C0DD97;
+        --red-bg: #501313;
+        --red-text: #F7C1C1;
+        --blue-bg: #042C53;
+        --blue-text: #B5D4F4;
+        --amber-bg: #412402;
+        --amber-text: #FAC775;
+      }
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-sub { font-size: 11px; color: var(--text-secondary); margin-bottom: 2px; }
+    .header-name { font-size: 20px; font-weight: 500; color: var(--text-primary); }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .month-nav span {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      min-width: 110px;
+      text-align: center;
+    }
+
+    button {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 0.5px solid var(--border-hover);
+      border-radius: var(--radius-md);
+      padding: 0 12px;
+      height: 32px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    button:hover { background: var(--bg-secondary); }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+
+    .metric {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-value { font-size: 20px; font-weight: 500; }
+    .metric-sub { font-size: 11px; margin-top: 4px; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 580px) {
+      .two-col { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      background: var(--bg-secondary);
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .progress-fill { height: 100%; border-radius: 999px; }
+
+    .progress-caption {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      margin-left: 6px;
+    }
+
+    .badge-green { background: var(--green-bg); color: var(--green-text); }
+    .badge-blue  { background: var(--blue-bg);  color: var(--blue-text);  }
+    .badge-amber { background: var(--amber-bg); color: var(--amber-text); }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-label { font-size: 11px; color: var(--text-secondary); }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      height: 36px;
+      padding: 0 10px;
+      border: 0.5px solid var(--border-hover);
+      border-radius: var(--radius-md);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    input:focus { border-color: #185FA5; box-shadow: 0 0 0 2px rgba(24,95,165,0.15); }
+
+    .btn-add-row { display: flex; gap: 6px; }
+
+    .btn-masuk {
+      background: var(--green-bg);
+      color: var(--green-text);
+      border-color: #C0DD97;
+      height: 36px;
+      white-space: nowrap;
+    }
+
+    .btn-keluar {
+      background: var(--red-bg);
+      color: var(--red-text);
+      border-color: #F7C1C1;
+      height: 36px;
+      white-space: nowrap;
+    }
+
+    .tx-list { list-style: none; }
+
+    .tx-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .tx-item:last-child { border-bottom: none; }
+
+    .tx-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+
+    .tx-icon.masuk { background: var(--green-bg); color: var(--green-text); }
+    .tx-icon.keluar { background: var(--red-bg); color: var(--red-text); }
+
+    .tx-info { flex: 1; }
+    .tx-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+    .tx-date { font-size: 11px; color: var(--text-secondary); }
+
+    .tx-amount { font-size: 13px; font-weight: 500; }
+    .tx-amount.masuk { color: var(--green-text); }
+    .tx-amount.keluar { color: var(--red-text); }
+
+    .chart-legend {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div>
+      <p class="header-sub">Tabungan Pribadi</p>
+      <p class="header-name">Muhamad Wahyu Saputra</p>
+    </div>
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)" aria-label="Bulan sebelumnya"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+      <span id="month-label">Juni 2026</span>
+      <button onclick="changeMonth(1)" aria-label="Bulan berikutnya"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric">
+      <div class="metric-label"><i class="ti ti-wallet" aria-hidden="true"></i> Total Saldo</div>
+      <div class="metric-value" id="stat-saldo"></div>
+      <div class="metric-sub" id="stat-saldo-sub" style="color:var(--green-text);"></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label"><i class="ti ti-arrow-down-circle" aria-hidden="true"></i> Pemasukan</div>
+      <div class="metric-value" id="stat-masuk" style="color:var(--green-text);"></div>
+      <div class="metric-sub" style="color:var(--text-secondary);">bulan ini</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label"><i class="ti ti-arrow-up-circle" aria-hidden="true"></i> Pengeluaran</div>
+      <div class="metric-value" id="stat-keluar" style="color:var(--red-text);"></div>
+      <div class="metric-sub" style="color:var(--text-secondary);">bulan ini</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label"><i class="ti ti-trending-up" aria-hidden="true"></i> Tabungan Bersih</div>
+      <div class="metric-value" id="stat-bersih" style="color:var(--blue-text);"></div>
+      <div class="metric-sub" style="color:var(--text-secondary);">bulan ini</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="ti ti-target" aria-hidden="true" style="margin-right:6px;"></i>Target Tabungan</span>
+      </div>
+
+      <div class="progress-label">
+        <span>Dana Darurat <span class="badge badge-green">Prioritas</span></span>
+        <span style="font-weight:500; color:var(--text-primary);">68%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:68%; background:var(--green-fill);"></div></div>
+      <div class="progress-caption">Rp 6,8 jt / Rp 10 jt</div>
+
+      <div class="progress-label">
+        <span>Liburan Bali <span class="badge badge-blue">Impian</span></span>
+        <span style="font-weight:500; color:var(--text-primary);">42%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:42%; background:#185FA5;"></div></div>
+      <div class="progress-caption">Rp 2,1 jt / Rp 5 jt</div>
+
+      <div class="progress-label">
+        <span>Gadget Baru <span class="badge badge-amber">Rencana</span></span>
+        <span style="font-weight:500; color:var(--text-primary);">21%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:21%; background:var(--amber-text);"></div></div>
+      <div class="progress-caption" style="margin-bottom:0;">Rp 1,5 jt / Rp 7 jt</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="ti ti-chart-bar" aria-hidden="true" style="margin-right:6px;"></i>Arus Kas (6 bulan)</span>
+      </div>
+      <div class="chart-legend">
+        <span><span class="legend-dot" style="background:#639922;"></span>Pemasukan</span>
+        <span><span class="legend-dot" style="background:#E24B4A;"></span>Pengeluaran</span>
+      </div>
+      <div style="position:relative; height:185px; width:100%;">
+        <canvas id="cashChart" role="img" aria-label="Grafik batang arus kas 6 bulan terakhir">
+          Pemasukan dan pengeluaran Jan–Jun 2026.
+        </canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="ti ti-plus-circle" aria-hidden="true" style="margin-right:6px;"></i>Tambah Transaksi</span>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="tx-desc">Keterangan</label>
+        <input type="text" id="tx-desc" placeholder="Nama transaksi" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="tx-amount">Jumlah (Rp)</label>
+        <input type="number" id="tx-amount" placeholder="500000" min="1" />
+      </div>
+      <div class="btn-add-row">
+        <button class="btn-masuk" onclick="addTx('masuk')">+ Masuk</button>
+        <button class="btn-keluar" onclick="addTx('keluar')">− Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title"><i class="ti ti-clock" aria-hidden="true" style="margin-right:6px;"></i>Riwayat Transaksi</span>
+    </div>
+    <ul class="tx-list" id="tx-list" aria-label="Daftar transaksi terbaru"></ul>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  const transactions = [
+    { desc: 'Gaji bulanan',       amount: 4500000, type: 'masuk',  date: '1 Jun 2026' },
+    { desc: 'Freelance desain',   amount: 1000000, type: 'masuk',  date: '5 Jun 2026' },
+    { desc: 'Sewa kos',           amount: 1200000, type: 'keluar', date: '3 Jun 2026' },
+    { desc: 'Belanja kebutuhan',  amount: 850000,  type: 'keluar', date: '8 Jun 2026' },
+    { desc: 'Transportasi',       amount: 350000,  type: 'keluar', date: '10 Jun 2026' },
+    { desc: 'Makan restoran',     amount: 180000,  type: 'keluar', date: '14 Jun 2026' },
+    { desc: 'Bonus proyek',       amount: 500000,  type: 'masuk',  date: '15 Jun 2026' },
+    { desc: 'Tagihan listrik',    amount: 250000,  type: 'keluar', date: '17 Jun 2026' },
+  ];
+
+  function fmt(n) {
+    if (n >= 1000000) return 'Rp ' + (n / 1000000).toFixed(1).replace('.', ',') + ' jt';
+    if (n >= 1000)    return 'Rp ' + Math.round(n / 1000) + ' rb';
+    return 'Rp ' + n.toLocaleString('id-ID');
+  }
+
+  function fmtShort(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'jt';
+    return Math.round(n / 1000) + 'rb';
+  }
+
+  function updateMetrics() {
+    const totalMasuk  = transactions.filter(t => t.type === 'masuk').reduce((s, t) => s + t.amount, 0);
+    const totalKeluar = transactions.filter(t => t.type === 'keluar').reduce((s, t) => s + t.amount, 0);
+    const saldo       = totalMasuk - totalKeluar;
+    const bersih      = totalMasuk - totalKeluar;
+
+    document.getElementById('stat-masuk').textContent  = fmt(totalMasuk);
+    document.getElementById('stat-keluar').textContent = fmt(totalKeluar);
+    document.getElementById('stat-saldo').textContent  = fmt(saldo);
+    document.getElementById('stat-bersih').textContent = fmt(bersih);
+
+    const subEl = document.getElementById('stat-saldo-sub');
+    if (bersih >= 0) {
+      subEl.style.color = 'var(--green-text)';
+      subEl.textContent = '↑ Tabungan positif';
+    } else {
+      subEl.style.color = 'var(--red-text)';
+      subEl.textContent = '↓ Pengeluaran melebihi pemasukan';
+    }
+  }
+
+  function renderList() {
+    const ul = document.getElementById('tx-list');
+    ul.innerHTML = transactions.slice(0, 8).map(t => `
+      <li class="tx-item">
+        <div class="tx-icon ${t.type}" aria-hidden="true">
+          <i class="ti ti-${t.type === 'masuk' ? 'arrow-down' : 'arrow-up'}"></i>
+        </div>
+        <div class="tx-info">
+          <div class="tx-name">${t.desc}</div>
+          <div class="tx-date">${t.date}</div>
+        </div>
+        <div class="tx-amount ${t.type}">${t.type === 'masuk' ? '+' : '−'}${fmt(t.amount)}</div>
+      </li>
+    `).join('');
+  }
+
+  function addTx(type) {
+    const descEl   = document.getElementById('tx-desc');
+    const amountEl = document.getElementById('tx-amount');
+    const desc     = descEl.value.trim();
+    const amount   = parseInt(amountEl.value);
+    if (!desc || !amount || amount <= 0) {
+      alert('Isi keterangan dan jumlah dengan benar.');
+      return;
+    }
+    const now = new Date();
+    transactions.unshift({ desc, amount, type, date: `${now.getDate()} Jun 2026` });
+    descEl.value   = '';
+    amountEl.value = '';
+    renderList();
+    updateMetrics();
+  }
+
+  const monthNames = [
+    'Januari 2026','Februari 2026','Maret 2026',
+    'April 2026','Mei 2026','Juni 2026'
+  ];
+  let currentMonthIdx = 5;
+
+  function changeMonth(dir) {
+    currentMonthIdx = Math.max(0, Math.min(monthNames.length - 1, currentMonthIdx + dir));
+    document.getElementById('month-label').textContent = monthNames[currentMonthIdx];
+  }
+
+  renderList();
+  updateMetrics();
+
+  new Chart(document.getElementById('cashChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Jan','Feb','Mar','Apr','Mei','Jun'],
+      datasets: [
+        {
+          label: 'Pemasukan',
+          data: [4200000, 4500000, 5100000, 4800000, 5300000, 5500000],
+          backgroundColor: '#639922',
+          borderRadius: 4,
+        },
+        {
+          label: 'Pengeluaran',
+          data: [3800000, 4100000, 3700000, 3900000, 4300000, 4100000],
+          backgroundColor: '#E24B4A',
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ' ' + fmtShort(ctx.raw) }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: {
+          grid: { color: 'rgba(136,135,128,0.15)' },
+          ticks: { font: { size: 10 }, callback: v => fmtShort(v) }
+        }
+      }
+    }
+  });
+</script>
+</body>
+</html>
